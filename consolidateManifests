@@ -1,0 +1,687 @@
+function consolidateManifests() {
+
+  //LUKE EDITS LOAD THE SHEETS
+  // Array of placeholder URLs for your spreadsheets.
+  var urls = [
+    "https://docs.google.com/spreadsheets/d/1l_K_xCuX1mhNfgesllMHYYtNLI9dQ6JJDd4FWhgOH4Y/edit?gid=0#gid=0",
+    "https://docs.google.com/spreadsheets/d/18fcwBimiY6fR55REqGnHlXYR4yJSmBMDSSFUAGKxSF4/edit?gid=0#gid=0",
+    "https://docs.google.com/spreadsheets/d/1Hf3IBFT8sc43OnKtbrv3bYCbJWQDSsTlLXKGVLILpVs/edit?gid=1731421997#gid=1731421997",
+    "https://docs.google.com/spreadsheets/d/1l734GOJ545mgjYGG30BS53IHbtS_3zHODlmG1ZSgf1c/edit?usp=sharing"
+  ];
+
+  // Object to store spreadsheets; keys will be spreadsheet names (spaces replaced with underscores)
+  var spreadsheets = {};
+
+  // Iterate over each URL
+  urls.forEach(function(url) {
+    try {
+      var ss = SpreadsheetApp.openByUrl(url);
+      // Clean up the name to be used as an object key (e.g., replace spaces with underscores)
+      var ssKey = ss.getName().replace(/\s+/g, '_');
+      
+      // Create an entry with the spreadsheet object and a nested object for its sheets
+      spreadsheets[ssKey] = {
+        spreadsheet: ss,
+        sheets: {}  // This will hold sheet objects keyed by their names
+      };
+
+      // Iterate over each sheet in the spreadsheet
+      ss.getSheets().forEach(function(sheet) {
+        var sheetKey = sheet.getName().replace(/\s+/g, '_');
+        spreadsheets[ssKey].sheets[sheetKey] = sheet;
+      });
+      
+      Logger.log("Loaded spreadsheet: " + ss.getName());
+    } catch (e) {
+      Logger.log("Error loading spreadsheet at URL (" + url + "): " + e);
+    }
+  });
+
+  // Logging the details of the stored spreadsheets and their sub-sheets
+  Logger.log("=== Loaded Spreadsheets and Their Sheets ===");
+  for (var ssKey in spreadsheets) {
+    if (spreadsheets.hasOwnProperty(ssKey)) {
+      var ssObj = spreadsheets[ssKey];
+      Logger.log("Spreadsheet Variable: " + ssKey);
+      Logger.log("  Name: " + ssObj.spreadsheet.getName());
+      Logger.log("  ID: " + ssObj.spreadsheet.getId());
+      
+      // Log each sub-sheet within the current spreadsheet
+      for (var sheetKey in ssObj.sheets) {
+        if (ssObj.sheets.hasOwnProperty(sheetKey)) {
+          var sheet = ssObj.sheets[sheetKey];
+          Logger.log("    Sheet Variable: " + sheetKey + " (Sheet ID: " + sheet.getSheetId() + ")");
+        }
+      }
+    }
+  }
+
+
+
+  /**
+  //LUKE SCRIPT GET ALL PURCHASED AND PUT INTO JOE SOLUTION
+    // === Aggregate Data from "Copy of 2/6/25 Missing inventory manifest" ===
+  var manifestKey = "Copy_of_2/6/25_Missing_inventory_manifest";
+  var destinationKey = "JOE_SOLUTION_MISSING_INVENTORY";
+  
+  if (spreadsheets[manifestKey] && spreadsheets[destinationKey]) {
+    var manifestSS = spreadsheets[manifestKey].spreadsheet;
+    var destinationSS = spreadsheets[destinationKey].spreadsheet;
+    var manifestSheets = spreadsheets[manifestKey].sheets;
+    
+    // Get or create the "ALL PURCHASED" sheet in the destination spreadsheet
+    var allPurchasedSheet = destinationSS.getSheetByName("ALL PURCHASED");
+    if (!allPurchasedSheet) {
+      allPurchasedSheet = destinationSS.insertSheet("ALL PURCHASED");
+    } else {
+      allPurchasedSheet.clearContents();
+    }
+    
+    // Write header row (5 columns: Quantity, Sku, SIZE, Cost Cents, Source)
+    var header = ["Quantity", "Sku", "SIZE", "Cost Cents", "Source"];
+    allPurchasedSheet.appendRow(header);
+    
+    var aggregatedData = [];
+    
+    // Loop through each subsheet in the manifest spreadsheet
+    for (var sheetKey in manifestSheets) {
+      if (manifestSheets.hasOwnProperty(sheetKey)) {
+        var sheet = manifestSheets[sheetKey];
+        var data = sheet.getDataRange().getValues();
+        // Only process if there's data beyond the header
+        if (data.length > 1) {
+          // Start at row index 1 to skip the header row
+          for (var i = 1; i < data.length; i++) {
+            var row = data[i].slice(0, 4); // Get first 4 columns
+            // Ensure the row has exactly 4 columns (pad with empty strings if needed)
+            while (row.length < 4) {
+              row.push("");
+            }
+            // If there are more than 4 columns, truncate to 4
+            if (row.length > 4) {
+              row = row.slice(0, 4);
+            }
+            // Append the source sheet name as the 5th column
+            row.push(sheet.getName());
+            aggregatedData.push(row);
+          }
+        }
+      }
+    }
+    
+    // Write the aggregated data to the "ALL PURCHASED" sheet (starting at row 2)
+    if (aggregatedData.length > 0) {
+      allPurchasedSheet.getRange(2, 1, aggregatedData.length, 5).setValues(aggregatedData);
+      Logger.log("Aggregated " + aggregatedData.length + " rows into the 'ALL PURCHASED' sheet.");
+    } else {
+      Logger.log("No data found to aggregate from the manifest spreadsheet.");
+    }
+  } else {
+    Logger.log("Could not find either the manifest spreadsheet or the destination spreadsheet in the loaded spreadsheets.");
+  }
+**/
+
+
+
+  /**
+  //LUKE SCRIPT PUT ALL SALES INTO JOE SOLUTION
+    // === Aggregate Sales Data from "Copy of 2/6/25 Missing Inventory Sales" into "ALL SALES" ===
+  var salesKey = "Copy_of_2/6/25_Missing_Inventory_Sales_";  // Key for the Sales spreadsheet from the loaded object
+  var destinationKey = "JOE_SOLUTION_MISSING_INVENTORY";
+  
+  if (spreadsheets[salesKey] && spreadsheets[destinationKey]) {
+    var salesSS = spreadsheets[salesKey].spreadsheet;
+    var destinationSS = spreadsheets[destinationKey].spreadsheet;
+    var salesSheets = spreadsheets[salesKey].sheets;
+    
+    // Get or create the "ALL SALES" sheet in the destination spreadsheet
+    var allSalesSheet = destinationSS.getSheetByName("ALL SALES");
+    if (!allSalesSheet) {
+      allSalesSheet = destinationSS.insertSheet("ALL SALES");
+    } else {
+      allSalesSheet.clearContents();
+    }
+    
+    // Desired header: Quantity, Sku, SIZE, Cost Cents, Source, ACTIVATED_DATE, PURCHASE DATE
+    var salesHeader = ["Quantity", "Sku", "SIZE", "Cost Cents", "Source", "ACTIVATED_DATE", "PURCHASE DATE"];
+    allSalesSheet.appendRow(salesHeader);
+    
+    var aggregatedSalesData = [];
+    
+    // Helper function: returns the index of the first header matching one of the possible names
+    function getColumnIndex(headerRow, possibleNames) {
+      for (var i = 0; i < headerRow.length; i++) {
+        var colName = headerRow[i].toString().trim().toLowerCase();
+        for (var j = 0; j < possibleNames.length; j++) {
+          if (colName === possibleNames[j].toLowerCase()) {
+            return i;
+          }
+        }
+      }
+      return -1;
+    }
+    
+    // Loop through each subsheet in the Sales spreadsheet
+    for (var salesSheetKey in salesSheets) {
+      if (salesSheets.hasOwnProperty(salesSheetKey)) {
+        var sheet = salesSheets[salesSheetKey];
+        var data = sheet.getDataRange().getValues();
+        if (data.length > 1) { // Ensure there's data beyond the header row
+          var headerRow = data[0];
+          
+          // Try to locate the required columns using alternatives:
+          // For Quantity, if not found, we'll default to 1.
+          var idxQuantity   = getColumnIndex(headerRow, ["Quantity"]);
+          var idxSku        = getColumnIndex(headerRow, ["Sku", "SKU"]);
+          var idxSize       = getColumnIndex(headerRow, ["SIZE", "Size"]);
+          var idxCostCents  = getColumnIndex(headerRow, ["Cost Cents", "YOUR_PRICE", "Cost", "CostCents"]);
+          var idxActivated  = getColumnIndex(headerRow, ["ACTIVATED_DATE", "Activated Date", "Activated"]);
+          var idxPurchase   = getColumnIndex(headerRow, ["PURCHASE DATE", "Purchase Date", "PURCHASE_DATE"]);
+          
+          // Check if the other required columns were found. For Quantity, we can supply a default.
+          if (idxSku === -1 || idxSize === -1 || idxCostCents === -1 || idxActivated === -1 || idxPurchase === -1) {
+            Logger.log("Sheet '" + sheet.getName() + "' does not have all required columns (SKU, SIZE, COST, ACTIVATED_DATE, PURCHASE DATE). Found headers: " + headerRow.join(", "));
+            continue;  // Skip this sheet if any required column (except Quantity) is missing
+          }
+          
+          // Process each data row (skip the header)
+          for (var i = 1; i < data.length; i++) {
+            var row = data[i];
+            var newRow = [];
+            // Use the found Quantity value or default to 1 if the column isn't present
+            var quantity = (idxQuantity !== -1) ? row[idxQuantity] : 1;
+            newRow.push(quantity);
+            newRow.push(row[idxSku] || "");
+            newRow.push(row[idxSize] || "");
+            newRow.push(row[idxCostCents] || "");
+            // Add the source (sheet name) as the 5th column
+            newRow.push(sheet.getName());
+            newRow.push(row[idxActivated] || "");
+            newRow.push(row[idxPurchase] || "");
+            aggregatedSalesData.push(newRow);
+          }
+        }
+      }
+    }
+    
+    if (aggregatedSalesData.length > 0) {
+      allSalesSheet.getRange(2, 1, aggregatedSalesData.length, salesHeader.length).setValues(aggregatedSalesData);
+      Logger.log("Aggregated " + aggregatedSalesData.length + " rows into the 'ALL SALES' sheet.");
+    } else {
+      Logger.log("No sales data found to aggregate.");
+    }
+  } else {
+    Logger.log("Could not find either the sales spreadsheet or the destination spreadsheet in the loaded spreadsheets.");
+  }
+  **/
+
+
+  /**
+  //LUKE SCRIPT AGGREGATE ALL MISSING
+    // === Aggregate Data from "FlipitChicago Bulk Withdrawal Inventory 2025" in "Copy of 2/6/25 Missing Inventory Inventory Sheet" into "ALL MISSING" ===
+  var inventoryKey = "Copy_of_2/6/25_Missing_Inventory_Inventory_Sheet";
+  var destinationKey = "JOE_SOLUTION_MISSING_INVENTORY";
+  
+  if (spreadsheets[inventoryKey] && spreadsheets[destinationKey]) {
+    var inventorySS = spreadsheets[inventoryKey].spreadsheet;
+    var destinationSS = spreadsheets[destinationKey].spreadsheet;
+    
+    // Get the specific subsheet "FlipitChicago Bulk Withdrawal Inventory 2025"
+    var missingSheetKey = "FlipitChicago_Bulk_Withdrawal_Inventory_2025";
+    var missingSheet = spreadsheets[inventoryKey].sheets[missingSheetKey];
+    
+    if (!missingSheet) {
+      Logger.log("Could not find the subsheet 'FlipitChicago Bulk Withdrawal Inventory 2025' in " + inventorySS.getName());
+    } else {
+      // Get or create the "ALL MISSING" sheet in the destination spreadsheet
+      var allMissingSheet = destinationSS.getSheetByName("ALL MISSING");
+      if (!allMissingSheet) {
+        allMissingSheet = destinationSS.insertSheet("ALL MISSING");
+      } else {
+        allMissingSheet.clearContents();
+      }
+      
+      // Desired header: Quantity, Sku, SIZE, Cost Cents, Source, AUTHENTICATED_AT
+      var missingHeader = ["Quantity", "Sku", "SIZE", "Cost Cents", "Source", "AUTHENTICATED_AT"];
+      allMissingSheet.appendRow(missingHeader);
+      
+      var data = missingSheet.getDataRange().getValues();
+      if (data.length > 1) { // Make sure there's data beyond the header
+        var headerRow = data[0];
+        
+        // Helper function to find the column index from possible names
+        function getColumnIndex(headerRow, possibleNames) {
+          for (var i = 0; i < headerRow.length; i++) {
+            var colName = headerRow[i].toString().trim().toLowerCase();
+            for (var j = 0; j < possibleNames.length; j++) {
+              if (colName === possibleNames[j].toLowerCase()) {
+                return i;
+              }
+            }
+          }
+          return -1;
+        }
+        
+        var idxSku = getColumnIndex(headerRow, ["Sku", "SKU"]);
+        var idxSize = getColumnIndex(headerRow, ["SIZE", "Size"]);
+        // Cost is optional; if not found, we'll default to an empty string.
+        var idxCost = getColumnIndex(headerRow, ["Cost Cents", "Cost", "CostCents"]);
+        
+        if (idxSku === -1 || idxSize === -1) {
+          Logger.log("The subsheet '" + missingSheet.getName() + "' does not have required SKU and SIZE columns. Found headers: " + headerRow.join(", "));
+        } else {
+          var aggregatedMissingData = [];
+          // Set a common AUTHENTICATED_AT value (current timestamp)
+          var authDate = new Date();
+          
+          // Process each data row (skip the header)
+          for (var i = 1; i < data.length; i++) {
+            var row = data[i];
+            var newRow = [];
+            // Default Quantity = 1
+            newRow.push(1);
+            // SKU value
+            newRow.push(row[idxSku] || "");
+            // SIZE value
+            newRow.push(row[idxSize] || "");
+            // Cost Cents value if exists; else empty string
+            newRow.push((idxCost !== -1) ? (row[idxCost] || "") : "");
+            // Source: the subsheet name
+            newRow.push(missingSheet.getName());
+            // AUTHENTICATED_AT: use the current timestamp
+            newRow.push(authDate);
+            aggregatedMissingData.push(newRow);
+          }
+          
+          if (aggregatedMissingData.length > 0) {
+            allMissingSheet.getRange(2, 1, aggregatedMissingData.length, missingHeader.length)
+                           .setValues(aggregatedMissingData);
+            Logger.log("Aggregated " + aggregatedMissingData.length + " rows into the 'ALL MISSING' sheet.");
+          } else {
+            Logger.log("No data found to aggregate from the subsheet '" + missingSheet.getName() + "'.");
+          }
+        }
+      } else {
+        Logger.log("No data found in the subsheet '" + missingSheet.getName() + "'.");
+      }
+    }
+  } else {
+    Logger.log("Could not find either the inventory spreadsheet or the destination spreadsheet in the loaded spreadsheets.");
+  }
+  **/
+
+
+
+  /**
+  //LUKE SCRIPT INCORRECT CONFIRM MISSING INVENTORY
+    // === Create "CONFIRMED MISSING INVENTORY" tab by subtracting ALL SALES and ALL MISSING from ALL PURCHASED ===
+  var destinationKey = "JOE_SOLUTION_MISSING_INVENTORY";
+  if (spreadsheets[destinationKey]) {
+    var destSS = spreadsheets[destinationKey].spreadsheet;
+    
+    // Retrieve the three tabs from the destination spreadsheet.
+    var allPurchasedSheet = destSS.getSheetByName("ALL PURCHASED");
+    var allSalesSheet = destSS.getSheetByName("ALL SALES");
+    var allMissingSheet = destSS.getSheetByName("ALL MISSING");
+    
+    if (!allPurchasedSheet) {
+      Logger.log("ALL PURCHASED sheet not found.");
+    } else if (!allSalesSheet) {
+      Logger.log("ALL SALES sheet not found.");
+    } else if (!allMissingSheet) {
+      Logger.log("ALL MISSING sheet not found.");
+    } else {
+      // Get data from each sheet.
+      var purchasedData = allPurchasedSheet.getDataRange().getValues();
+      var salesData = allSalesSheet.getDataRange().getValues();
+      var missingData = allMissingSheet.getDataRange().getValues();
+      
+      // We'll accumulate items by normalizing SKU and SIZE.
+      var inventoryMap = {};
+      function addRows(data, type) {
+        // Assumes header is in row 1.
+        for (var i = 1; i < data.length; i++) {
+          var row = data[i];
+          // For ALL PURCHASED, ALL SALES, and ALL MISSING, assume:
+          // Column 0: Quantity, Column 1: SKU, Column 2: SIZE, Column 3: Cost Cents (if available)
+          var qty = Number(row[0]) || 0;
+          var sku = row[1] ? row[1].toString() : "";
+          var size = row[2] ? row[2].toString() : "";
+          var cost = row[3] || "";
+          // Normalize SKU and SIZE: remove spaces and convert to uppercase.
+          var normSku = sku.replace(/\s+/g, "").toUpperCase();
+          var normSize = size.trim().toUpperCase();
+          var key = normSku + "_" + normSize;
+          if (!inventoryMap[key]) {
+            inventoryMap[key] = { sku: sku, size: size, cost: cost, purchased: 0, sold: 0, missing: 0 };
+          }
+          inventoryMap[key][type] += qty;
+        }
+      }
+      
+      // Sum purchased quantities.
+      addRows(purchasedData, "purchased");
+      // Subtract sold quantities.
+      addRows(salesData, "sold");
+      // Subtract missing (reported) quantities.
+      addRows(missingData, "missing");
+      
+      // Compute the "confirmed missing" quantity: purchased - (sold + missing)
+      var confirmedRows = [];
+      // We'll output a header: ["Quantity", "Sku", "SIZE", "Cost Cents"]
+      for (var key in inventoryMap) {
+        if (inventoryMap.hasOwnProperty(key)) {
+          var entry = inventoryMap[key];
+          var confirmed = entry.purchased - (entry.sold + entry.missing);
+          if (confirmed > 0) {
+            confirmedRows.push([confirmed, entry.sku, entry.size, entry.cost]);
+          }
+        }
+      }
+      
+      // Create or clear the "CONFIRMED MISSING INVENTORY" sheet.
+      var confirmedSheet = destSS.getSheetByName("CONFIRMED MISSING INVENTORY");
+      if (!confirmedSheet) {
+        confirmedSheet = destSS.insertSheet("CONFIRMED MISSING INVENTORY");
+      } else {
+        confirmedSheet.clearContents();
+      }
+      
+      // Write header and then the computed rows.
+      var header = ["Quantity", "Sku", "SIZE", "Cost Cents"];
+      confirmedSheet.appendRow(header);
+      if (confirmedRows.length > 0) {
+        confirmedSheet.getRange(2, 1, confirmedRows.length, header.length).setValues(confirmedRows);
+        Logger.log("CONFIRMED MISSING INVENTORY: Aggregated " + confirmedRows.length + " items.");
+      } else {
+        Logger.log("No confirmed missing inventory items found.");
+      }
+    }
+  } else {
+    Logger.log("Destination spreadsheet not found in loaded spreadsheets.");
+  }
+  **/
+
+
+  /**
+  //LUKE SCRIPT NORMALIZE QUANITITY OF ALL PURCHASED
+    // === Normalize Quantities in ALL PURCHASED so every item gets its own row ===
+  var destinationKey = "JOE_SOLUTION_MISSING_INVENTORY";
+  if (spreadsheets[destinationKey]) {
+    var destSS = spreadsheets[destinationKey].spreadsheet;
+    var allPurchasedSheet = destSS.getSheetByName("ALL PURCHASED");
+    if (!allPurchasedSheet) {
+      Logger.log("ALL PURCHASED sheet not found.");
+    } else {
+      // Get data from ALL PURCHASED (assumes header row is in row 1)
+      var purchasedData = allPurchasedSheet.getDataRange().getValues();
+      if (purchasedData.length < 2) {
+        Logger.log("No data (besides header) found in ALL PURCHASED.");
+      } else {
+        var header = purchasedData[0];  // Expected header: ["Quantity", "Sku", "SIZE", "Cost Cents", "Source"]
+        var normalizedRows = [];
+        // Process each row (skip header)
+        for (var i = 1; i < purchasedData.length; i++) {
+          var row = purchasedData[i];
+          // Convert the quantity to a number; if blank or invalid, default to 1.
+          var qty = Number(row[0]);
+          if (!qty || qty < 1) {
+            qty = 1;
+          }
+          // For each unit in the quantity, create a new row with quantity = 1
+          for (var j = 0; j < qty; j++) {
+            normalizedRows.push([1, row[1], row[2], row[3], row[4]]);
+          }
+        }
+        
+        // Create (or clear) the "ALL PURCHASED NORMALIZED" sheet
+        var normalizedSheet = destSS.getSheetByName("ALL PURCHASED NORMALIZED");
+        if (!normalizedSheet) {
+          normalizedSheet = destSS.insertSheet("ALL PURCHASED NORMALIZED");
+        } else {
+          normalizedSheet.clearContents();
+        }
+        // Write header and normalized rows
+        normalizedSheet.appendRow(header);
+        if (normalizedRows.length > 0) {
+          normalizedSheet.getRange(2, 1, normalizedRows.length, header.length)
+                          .setValues(normalizedRows);
+          Logger.log("Normalized " + normalizedRows.length + " rows from ALL PURCHASED into ALL PURCHASED NORMALIZED.");
+        } else {
+          Logger.log("No rows to normalize in ALL PURCHASED.");
+        }
+      }
+    }
+  } else {
+    Logger.log("Destination spreadsheet not found.");
+  }
+
+  **/
+
+  /**
+   //LUKE SCRIPT PURCHASED VS INVENTORY & SALES 
+    // === Match ALL PURCHASED NORMALIZED against combined ALL SALES and ALL INVENTORY, and output unmatched items ===
+    // === Build unmatched items list from ALL PURCHASED NORMALIZED, ALL SALES, and ALL INVENTORY ===
+    // === Create "UNMATCHED ITEMS" from ALL PURCHASED NORMALIZED by subtracting ALL SALES and ALL INVENTORY ===
+    // === Build a list of unmatched items from ALL PURCHASED NORMALIZED, ALL SALES, and ALL INVENTORY ===
+  var destKey = "JOE_SOLUTION_MISSING_INVENTORY";
+  if (spreadsheets[destKey]) {
+    var destSS = spreadsheets[destKey].spreadsheet;
+    var sheetNames = ["ALL PURCHASED NORMALIZED", "ALL SALES", "ALL INVENTORY"];
+    
+    // We'll build a dictionary for each sheet:
+    // sheetDataDict[sheetName][normalizedKey] = array of rows (each row as an array)
+    // sheetCountDict[sheetName][normalizedKey] = count of units for that key in that sheet
+    var sheetDataDict = {};
+    var sheetCountDict = {};
+    var commonHeader = null;
+    
+    // Helper: normalize SKU and SIZE (assume SKU is col 1 and SIZE is col 2)
+    function normalizeKey(sku, size) {
+      return sku.toString().replace(/\s+/g, "").toUpperCase() + "_" + size.toString().trim().toUpperCase();
+    }
+    
+    // Process each sheet
+    sheetNames.forEach(function(shName) {
+      var sh = destSS.getSheetByName(shName);
+      if (sh) {
+        var data = sh.getDataRange().getValues();
+        if (data.length > 0) {
+          // Use the first header we find as the common header.
+          if (!commonHeader) {
+            commonHeader = data[0];
+          }
+          sheetDataDict[shName] = {};
+          sheetCountDict[shName] = {};
+          // Process each data row (skip header)
+          for (var i = 1; i < data.length; i++) {
+            var row = data[i];
+            // Standardize row to have exactly as many columns as the header.
+            var stdRow = row.slice(0, commonHeader.length);
+            while (stdRow.length < commonHeader.length) {
+              stdRow.push("");
+            }
+            var sku = stdRow[1] || "";
+            var size = stdRow[2] || "";
+            var key = normalizeKey(sku, size);
+            if (!sheetDataDict[shName][key]) {
+              sheetDataDict[shName][key] = [];
+              sheetCountDict[shName][key] = 0;
+            }
+            sheetDataDict[shName][key].push(stdRow);
+            sheetCountDict[shName][key]++;
+          }
+        }
+      } else {
+        Logger.log("Sheet " + shName + " not found in destination spreadsheet.");
+      }
+    });
+    
+    // Now, for each sheet, compare its counts for each key with the counts from the other two.
+    var unmatchedRows = [];
+    sheetNames.forEach(function(currentSheetName) {
+      if (!sheetCountDict[currentSheetName]) return;
+      for (var key in sheetCountDict[currentSheetName]) {
+        if (sheetCountDict[currentSheetName].hasOwnProperty(key)) {
+          var countCurrent = sheetCountDict[currentSheetName][key];
+          var countOther = 0;
+          sheetNames.forEach(function(otherSheetName) {
+            if (otherSheetName !== currentSheetName && sheetCountDict[otherSheetName] && sheetCountDict[otherSheetName][key]) {
+              countOther += sheetCountDict[otherSheetName][key];
+            }
+          });
+          var extra = countCurrent - countOther;
+          if (extra > 0) {
+            var rowsForKey = sheetDataDict[currentSheetName][key];
+            // Output as many rows as the "extra" number.
+            for (var j = 0; j < extra && j < rowsForKey.length; j++) {
+              var newRow = rowsForKey[j].slice(); // clone the row
+              // Append a new column indicating the sheet this unmatched row came from.
+              newRow.push(currentSheetName);
+              unmatchedRows.push(newRow);
+            }
+          }
+        }
+      }
+    });
+    
+    // Create (or clear) the "UNMATCHED ITEMS" sheet.
+    var unmatchedSheet = destSS.getSheetByName("UNMATCHED ITEMS");
+    if (!unmatchedSheet) {
+      unmatchedSheet = destSS.insertSheet("UNMATCHED ITEMS");
+    } else {
+      unmatchedSheet.clearContents();
+    }
+    
+    // Build output header: take the common header and append "Sheet" as extra column.
+    if (!commonHeader) {
+      commonHeader = ["Quantity", "Sku", "SIZE", "Cost Cents", "Source"];
+    }
+    var outputHeader = commonHeader.slice();
+    outputHeader.push("Sheet");
+    unmatchedSheet.appendRow(outputHeader);
+    
+    if (unmatchedRows.length > 0) {
+      unmatchedSheet.getRange(2, 1, unmatchedRows.length, outputHeader.length).setValues(unmatchedRows);
+      Logger.log("UNMATCHED ITEMS sheet created with " + unmatchedRows.length + " rows.");
+    } else {
+      Logger.log("No unmatched items found.");
+    }
+  } else {
+    Logger.log("Destination spreadsheet not found in loaded spreadsheets.");
+  }
+
+  **/
+
+  //LUKE SCRIPT IGNORE SIZE LETTERS 
+    // === Build a list of unmatched items using a size normalization that ignores letters in sizes ===
+  var destKey = "JOE_SOLUTION_MISSING_INVENTORY";
+  if (spreadsheets[destKey]) {
+    var destSS = spreadsheets[destKey].spreadsheet;
+    var sheetNames = ["ALL PURCHASED NORMALIZED", "ALL SALES", "ALL INVENTORY"];
+    
+    // Dictionaries to hold rows and counts by sheet.
+    var sheetDataDict = {};
+    var sheetCountDict = {};
+    var commonHeader = null;
+    
+    // Helper: normalize SKU normally, but remove letters from SIZE.
+    function normalizeKeyIgnoreLetters(sku, size) {
+      var normSku = sku.toString().replace(/\s+/g, "").toUpperCase();
+      // Remove any letters from the size string.
+      var normSize = size.toString().replace(/[A-Za-z]/g, "").trim();
+      return normSku + "_" + normSize;
+    }
+    
+    // Process each sheet.
+    sheetNames.forEach(function(shName) {
+      var sh = destSS.getSheetByName(shName);
+      if (sh) {
+        var data = sh.getDataRange().getValues();
+        if (data.length > 0) {
+          if (!commonHeader) {
+            commonHeader = data[0]; // use first found header as reference
+          }
+          sheetDataDict[shName] = {};
+          sheetCountDict[shName] = {};
+          // Process each data row (skip header).
+          for (var i = 1; i < data.length; i++) {
+            var row = data[i];
+            // Standardize the row to match the header's column count.
+            var stdRow = row.slice(0, commonHeader.length);
+            while (stdRow.length < commonHeader.length) {
+              stdRow.push("");
+            }
+            var sku = stdRow[1] || "";
+            var size = stdRow[2] || "";
+            var key = normalizeKeyIgnoreLetters(sku, size);
+            if (!sheetDataDict[shName][key]) {
+              sheetDataDict[shName][key] = [];
+              sheetCountDict[shName][key] = 0;
+            }
+            sheetDataDict[shName][key].push(stdRow);
+            sheetCountDict[shName][key]++;
+          }
+        }
+      } else {
+        Logger.log("Sheet " + shName + " not found in destination spreadsheet.");
+      }
+    });
+    
+    // Now, for each sheet, compare its counts for each key with the counts from the other two.
+    var unmatchedRows = [];
+    sheetNames.forEach(function(currentSheetName) {
+      if (!sheetCountDict[currentSheetName]) return;
+      for (var key in sheetCountDict[currentSheetName]) {
+        if (sheetCountDict[currentSheetName].hasOwnProperty(key)) {
+          var countCurrent = sheetCountDict[currentSheetName][key];
+          var countOther = 0;
+          sheetNames.forEach(function(otherSheetName) {
+            if (otherSheetName !== currentSheetName && sheetCountDict[otherSheetName] && sheetCountDict[otherSheetName][key]) {
+              countOther += sheetCountDict[otherSheetName][key];
+            }
+          });
+          var extra = countCurrent - countOther;
+          if (extra > 0) {
+            var rowsForKey = sheetDataDict[currentSheetName][key];
+            // Output as many rows as the "extra" number.
+            for (var j = 0; j < extra && j < rowsForKey.length; j++) {
+              var newRow = rowsForKey[j].slice(); // clone the row
+              // Append an extra column indicating from which sheet this row came.
+              newRow.push(currentSheetName);
+              unmatchedRows.push(newRow);
+            }
+          }
+        }
+      }
+    });
+    
+    // Create (or clear) a new sheet called "UNMATCHED ITEMS (IGNORE SIZE LETTERS)".
+    var unmatchedSheet = destSS.getSheetByName("UNMATCHED ITEMS (IGNORE SIZE LETTERS)");
+    if (!unmatchedSheet) {
+      unmatchedSheet = destSS.insertSheet("UNMATCHED ITEMS (IGNORE SIZE LETTERS)");
+    } else {
+      unmatchedSheet.clearContents();
+    }
+    
+    // Build the output header (common header plus extra "Sheet" column).
+    if (!commonHeader) {
+      commonHeader = ["Quantity", "Sku", "SIZE", "Cost Cents", "Source"];
+    }
+    var outputHeader = commonHeader.slice();
+    outputHeader.push("Sheet");
+    unmatchedSheet.appendRow(outputHeader);
+    
+    if (unmatchedRows.length > 0) {
+      unmatchedSheet.getRange(2, 1, unmatchedRows.length, outputHeader.length).setValues(unmatchedRows);
+      Logger.log("UNMATCHED ITEMS (IGNORE SIZE LETTERS) sheet created with " + unmatchedRows.length + " rows.");
+    } else {
+      Logger.log("No unmatched items found using ignore-letters normalization for sizes.");
+    }
+  } else {
+    Logger.log("Destination spreadsheet not found in loaded spreadsheets.");
+  }
+
+
+
+}
